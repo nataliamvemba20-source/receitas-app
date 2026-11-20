@@ -132,7 +132,20 @@ export async function POST(req: Request) {
   return NextResponse.json({
     receita: { id: receita.id, code: receita.code },
     raioPertoKm: RAIO_PERTO_KM,
-    farmacias: resultado.filter((r) => r.tem.length > 0),
+        farmacias: resultado
+      .filter((r) => r.tem.length > 0)
+      .map((r) => ({
+        id: r.id,
+        nome: r.nome,
+        morada: r.morada,
+        total: r.total,
+        temQtd: r.tem.length,
+        totalQtd: r.tem.length + r.falta.length,
+        temTudo: r.temTudo,
+        distanciaKm: r.distanciaKm,
+        perto: r.perto,
+        comoChegar: r.comoChegar,
+      })),
     semNenhum: resultado.filter((r) => r.tem.length === 0).length,
   });
 }

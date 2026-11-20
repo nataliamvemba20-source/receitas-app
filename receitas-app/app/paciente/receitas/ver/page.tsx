@@ -9,8 +9,8 @@ type Farmacia = {
   nome: string;
   morada: string | null;
   total: number;
-  tem: { nome: string; quantidade: number; subtotal: number }[];
-  falta: { nome: string; quantidade: number }[];
+  temQtd: number;
+  totalQtd: number;
   temTudo: boolean;
   distanciaKm: number | null;
   perto: boolean | null;
@@ -28,6 +28,32 @@ function Conteudo() {
   const [erro, setErro] = useState("");
   const [aviso, setAviso] = useState("");
   const [aCarregar, setACarregar] = useState(true);
+  const [aReservar, setAReservar] = useState("");
+
+  async function reservar(farmaciaId: string) {
+    setErro("");
+    setAReservar(farmaciaId);
+    try {
+      const { data } = await createClient().auth.getSession();
+      const token = data.session?.access_token;
+      if (!token) {
+        router.push("/login");
+        return;
+      }
+      const resp = await fetch("/api/paciente/reservar", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: "Bearer " + token },
+        body: JSON.stringify({ prescription_id: receitaId, pharmacy_id: farmaciaId }),
+      });
+      const dados = await resp.json();
+      if (!resp.ok) setErro(dados.erro ?? "Não foi possível reservar.");
+      else router.push("/paciente/pedido?id=" + dados.order_id);
+    } catch {
+      setErro("Não foi possível ligar ao servidor.");
+    } finally {
+      setAReservar("");
+    }
+  }
 
   useEffect(() => {
     async function pedir(lat: number | null, lon: number | null) {
@@ -81,13 +107,16 @@ function Conteudo() {
   return (
     <main className="min-h-screen bg-gray-50 p-6 max-w-2xl mx-auto space-y-4">
       <h1 className="text-2xl font-bold">Farmácias para {codigo || "a receita"}</h1>
+      <p className="text-sm text-gray-600">
+        Os medicamentos só aparecem depois de pagares a reserva.
+      </p>
 
       {aCarregar && <p>A procurar farmácias...</p>}
       {aviso && <p className="text-amber-700">{aviso}</p>}
       {erro && <p className="text-red-600">{erro}</p>}
       {!aCarregar && !erro && farmacias.length === 0 && (
         <p className="text-gray-600">
-          Nenhuma farmácia verificada tem estes medicamentos neste momento.
+          Nenhuma farmácia verificada tem medicamentos desta receita neste momento.
         </p>
       )}
 
@@ -108,16 +137,9 @@ function Conteudo() {
 
             <p className={f.temTudo ? "text-green-700 font-semibold" : "text-amber-700 font-semibold"}>
               {f.temTudo
-                ? "Tem todos os medicamentos"
-                : "Tem só parte dos medicamentos (o total é só do que tem)"}
+                ? "Tem todos os medicamentos (" + f.totalQtd + ")"
+                : "Tem " + f.temQtd + " de " + f.totalQtd + " medicamentos (o total é só do que tem)"}
             </p>
-
-            <ul className="text-sm text-gray-700">{f.tem.map((t) => (<li key={t.nome}>{t.nome} x{t.quantidade} - {t.subtotal.toFixed(2)}</li>))}</ul>
-            {f.falta.length > 0 && (
-              <p className="text-red-600 text-sm">
-                Em falta: {f.falta.map((x) => x.nome).join(", ")}
-              </p>
-            )}
 
             <a
               href={f.comoChegar}
@@ -127,6 +149,13 @@ function Conteudo() {
             >
               Como chegar
             </a>
+            <button
+              onClick={() => reservar(f.id)}
+              disabled={aReservar !== ""}
+              className="ml-2 bg-gray-800 text-white rounded px-4 py-2 font-semibold disabled:opacity-50"
+            >
+              {aReservar === f.id ? "A reservar..." : "Reservar aqui"}
+            </button>
           </div>
         ))}
       </div>
