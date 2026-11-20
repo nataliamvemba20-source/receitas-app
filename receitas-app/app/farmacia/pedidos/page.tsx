@@ -36,7 +36,7 @@ export default function PedidosFarmacia() {
         "id, status, total, qr_token, created_at, order_items(quantity, unit_price, medication_id, medications(name, strength))"
       )
       .eq("pharmacy_id", id)
-      .in("status", ["pago", "aceite"])
+      .in("status", ["reservado", "pago", "aceite"])
       .order("created_at", { ascending: true });
     if (error) setMensagem(error.message);
     else setPedidos(data as unknown as Pedido[]);
@@ -80,6 +80,28 @@ export default function PedidosFarmacia() {
     if (error) setMensagem(error.message);
     else if (!data || data.length === 0)
       setMensagem("A base de dados recusou a alteração.");
+    else {
+      setMensagem("");
+      carregar(farmaciaId);
+    }
+  }
+
+  async function marcarPago(id: string) {
+    if (!window.confirm("Só confirmes se já recebeste o pagamento (Multicaixa Express ou dinheiro). O paciente já pagou?")) return;
+    setMensagem("");
+    const { data } = await createClient().auth.getSession();
+    const token = data.session?.access_token;
+    if (!token) {
+      router.push("/login");
+      return;
+    }
+    const resp = await fetch("/api/farmacia/marcar-pago", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: "Bearer " + token },
+      body: JSON.stringify({ id }),
+    });
+    const r = await resp.json();
+    if (!resp.ok) setMensagem(r.erro ?? "Erro.");
     else {
       setMensagem("");
       carregar(farmaciaId);
@@ -226,12 +248,12 @@ export default function PedidosFarmacia() {
               </p>
               <span
                 className={
-                  p.status === "pago"
+                  p.status !== "aceite"
                     ? "text-xs bg-amber-100 text-amber-800 rounded px-2 py-1"
                     : "text-xs bg-green-100 text-green-800 rounded px-2 py-1"
                 }
               >
-                {p.status === "pago" ? "Pago" : "Aceite"}
+                {p.status === "reservado" ? "Reservado" : p.status === "pago" ? "Pago" : "Aceite"}
               </span>
             </div>
             {p.order_items.map((i, k) => (
@@ -242,6 +264,14 @@ export default function PedidosFarmacia() {
             <p className="font-semibold">
               {Number(p.total).toLocaleString("pt-PT")} Kz
             </p>
+            {p.status === "reservado" && (
+              <button
+                onClick={() => marcarPago(p.id)}
+                className="text-sm bg-green-600 text-white rounded px-3 py-1"
+              >
+                Marcar como pago
+              </button>
+            )}
             {p.status === "pago" && (
               <div className="flex gap-2">
                 <button
