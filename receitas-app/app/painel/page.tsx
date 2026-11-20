@@ -13,7 +13,7 @@ const menus: Record<string, Entrada[]> = {
     { texto: "Juntar receita", href: "/paciente/juntar" },
     { texto: "As minhas receitas", href: "/paciente/receitas" },
     { texto: "Encontrar farmácia", href: "/paciente/farmacias" },
-    { texto: "Os meus pedidos (em breve)" },
+    { texto: "Os meus pedidos", href: "/pedidos" },
     { texto: "Lembretes das tomas (em breve)" },
   ],
   medico: [{ texto: "Emitir receita", href: "/medico/receitas/nova" }],

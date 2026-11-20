@@ -17,14 +17,11 @@ type Pedido = {
     latitude: number | null;
     longitude: number | null;
   };
-  order_items: {
-    quantity: number;
-    unit_price: number;
-    medications: { name: string; strength: string | null };
-  }[];
+  order_items: { quantity: number }[];
 };
 
 const textos: Record<string, string> = {
+  reservado: "Reservado. Paga na farmácia para ver os medicamentos.",
   pago: "Pago. À espera que a farmácia aceite.",
   aceite: "Aceite. Mostra o QR na farmácia para levantar.",
   levantado: "Levantado.",
@@ -50,7 +47,7 @@ export default function Pedidos() {
       const { data, error } = await supabase
         .from("orders")
         .select(
-          "id, status, total, qr_token, created_at, pharmacies(name, address, latitude, longitude), order_items(quantity, unit_price, medications(name, strength))"
+          "id, status, total, qr_token, created_at, pharmacies(name, address, latitude, longitude), order_items(quantity)"
         )
         .eq("patient_id", user.id)
         .order("created_at", { ascending: false });
@@ -79,9 +76,17 @@ export default function Pedidos() {
           <div>
             <p className="font-semibold">{p.pharmacies.name}</p>
             <p className="text-xs text-gray-600">{p.pharmacies.address}</p>
+            <p className="text-xs text-gray-500">
+              {new Date(p.created_at).toLocaleDateString("pt-PT")}
+            </p>
             {p.pharmacies.latitude != null && p.pharmacies.longitude != null && (
               <a
-                href={`https://www.google.com/maps/dir/?api=1&destination=${p.pharmacies.latitude},${p.pharmacies.longitude}`}
+                href={
+                  "https://www.google.com/maps/dir/?api=1&destination=" +
+                  p.pharmacies.latitude +
+                  "," +
+                  p.pharmacies.longitude
+                }
                 target="_blank"
                 rel="noreferrer"
                 className="text-xs text-green-700 underline"
@@ -91,12 +96,7 @@ export default function Pedidos() {
             )}
           </div>
 
-          {p.order_items.map((i, k) => (
-            <p key={k} className="text-sm">
-              {i.quantity}x {i.medications.name} {i.medications.strength}
-            </p>
-          ))}
-
+          <p className="text-sm">{p.order_items.length} medicamento(s)</p>
           <p className="font-semibold">
             Total: {Number(p.total).toLocaleString("pt-PT")} Kz
           </p>
@@ -107,6 +107,13 @@ export default function Pedidos() {
               <QRCodeSVG value={p.qr_token} size={200} />
             </div>
           )}
+
+          <a
+            href={"/paciente/pedido?id=" + p.id}
+            className="inline-block bg-green-600 text-white rounded px-4 py-2 text-sm font-semibold"
+          >
+            Ver detalhes
+          </a>
         </section>
       ))}
     </main>
