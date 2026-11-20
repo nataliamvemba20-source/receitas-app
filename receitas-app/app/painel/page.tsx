@@ -19,7 +19,7 @@ const menus: Record<string, Entrada[]> = {
   medico: [{ texto: "Emitir receita", href: "/medico/receitas/nova" }],
   farmacia: [
     { texto: "Stock e preços", href: "/farmacia/stock" },
-    { texto: "Pedidos e leitura de QR (em breve)" },
+    { texto: "Levantar pedido (ler QR)", href: "/farmacia/levantar" },
   ],
   admin: [
     { texto: "Registar e verificar farmácias", href: "/admin/farmacias" },
