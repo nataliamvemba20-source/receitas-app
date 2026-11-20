@@ -59,6 +59,7 @@ export default function MinhasReceitas() {
             <p>Emitida em {r.issued_at}</p>
             <p>Válida até {r.valid_until}</p>
             <p>Estado: {r.status}</p>
+            <a href={"/paciente/receitas/ver?id=" + r.id} className="inline-block mt-2 bg-green-600 text-white rounded px-4 py-2 font-semibold">Ver farmácias</a>
           </div>
         ))}
       </div>
